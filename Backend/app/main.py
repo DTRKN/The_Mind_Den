@@ -26,7 +26,7 @@ from db.database import (
 )
 from bot.handlers import register_handlers
 from scheduler.scheduler import get_scheduler, load_pending_reminders
-from skills.loader import reload_skills
+from skills.loader import reload_skills, get_loaded_skills
 
 # ─── Логирование ──────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -176,6 +176,43 @@ async def api_reminders_delete(reminder_id: int):
     deleted = await delete_reminder_api(reminder_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Напоминание не найдено")
+
+
+# ─── Skills CRUD ───────────────────────────────────────────────────────────────
+
+class SkillCreateRequest(BaseModel):
+    name: str
+    title: str
+    description: str
+    content: str = ""
+
+
+@app.get("/api/skills")
+async def api_skills_list():
+    """Список загруженных скиллов."""
+    return get_loaded_skills()
+
+
+@app.post("/api/skills", status_code=201)
+async def api_skills_create(body: SkillCreateRequest):
+    """Создать новый скилл (папка + SKILL.md) и перезагрузить кеш."""
+    from agent.tools.skill_tool import SkillToolInput, run_skill_tool
+    try:
+        data = SkillToolInput(
+            name=body.name,
+            title=body.title,
+            description=body.description,
+            content=body.content,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    result = await run_skill_tool(data)
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Ошибка создания скилла"))
+    # Вернуть созданный скилл из кеша
+    skills = get_loaded_skills()
+    created = next((s for s in skills if s["name"] == data.name), result)
+    return created
 
 
 # ─── Локальный запуск ──────────────────────────────────────────────────────────
