@@ -26,6 +26,9 @@ PINECONE_INDEX_NAME: str = os.getenv("PINECONE_INDEX_NAME", "the-mind-den-memory
 # Groq
 GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
 
+# Tavily (веб-поиск)
+TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
+
 # Файловый workspace (ограничение для file_tool)
 WORKSPACE_DIR: str = os.getenv("WORKSPACE_DIR", "./workspace")
 

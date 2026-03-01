@@ -144,4 +144,34 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search_tool",
+            "description": (
+                "Поиск актуальной информации в интернете через Tavily. "
+                "Используй для ответов на вопросы о текущих событиях, погоде, "
+                "новостях, ценах и любых данных, требующих актуальности."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Поисковый запрос на русском или английском языке",
+                    },
+                    "search_depth": {
+                        "type": "string",
+                        "enum": ["basic", "advanced"],
+                        "description": "basic — быстрый поиск, advanced — углублённый",
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Число результатов (1–10), по умолчанию 5",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    },
 ]

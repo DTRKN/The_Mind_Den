@@ -155,6 +155,7 @@ class AgentRunner:
             "memory_tool": self._handle_memory,
             "file_tool": self._handle_file,
             "skill_tool": self._handle_skill,
+            "web_search_tool": self._handle_web_search,
         }
 
         handler = handlers.get(tool_name)
@@ -205,3 +206,12 @@ class AgentRunner:
         except Exception as e:
             return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
         return await run_skill_tool(data)
+
+    async def _handle_web_search(self, user_id: int, args: dict) -> dict:
+        """web_search_tool: поиск в интернете через Tavily API."""
+        from agent.tools.web_search_tool import WebSearchToolInput, run_web_search_tool
+        try:
+            data = WebSearchToolInput(**args)
+        except Exception as e:
+            return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
+        return await run_web_search_tool(data)
