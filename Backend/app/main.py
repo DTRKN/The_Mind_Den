@@ -26,6 +26,7 @@ from db.database import (
 )
 from bot.handlers import register_handlers
 from scheduler.scheduler import get_scheduler, load_pending_reminders
+from skills.loader import reload_skills
 
 # ─── Логирование ──────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -76,6 +77,10 @@ async def lifespan(app: FastAPI):
     await _tg_app.updater.start_polling(drop_pending_updates=True)
 
     await load_pending_reminders(_tg_app)
+
+    # ── Загрузка скиллов ─────────────────────────────────────────────────
+    reload_skills()
+
     logger.info(f"Whitelist: {ALLOWED_USER_IDS}")
     logger.info("Бот запущен (polling). FastAPI слушает на :8000")
 

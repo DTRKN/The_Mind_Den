@@ -39,6 +39,7 @@ from bot.reminder_handler import cmd_reminders, cmd_cancel
 from bot.voice_handler import transcribe_voice
 from db.database import clear_history
 from agent.agent import AgentRunner, get_model, set_model
+from skills.loader import get_skills_text
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +155,7 @@ async def _process_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text
 
     # AgentRunner — единый цикл: сам решает какие tools вызвать
     await update.message.chat.send_action("typing")
-    runner = AgentRunner(app=context.application)
+    runner = AgentRunner(app=context.application, skills_text=get_skills_text())
     reply = await runner.run(update.effective_user.id, text)
     for chunk in _split_message(reply):
         await update.message.reply_text(chunk, parse_mode="Markdown")
