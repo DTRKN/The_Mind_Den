@@ -15,4 +15,4 @@ RUN mkdir -p /data
 ENV PYTHONUNBUFFERED=1
 ENV DB_PATH=/data/the_mind_den.db
 
-CMD ["python", "app/main.py"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--app-dir", "/app"]
