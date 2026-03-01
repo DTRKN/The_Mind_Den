@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from telegram.ext import ApplicationBuilder
 
 from config import TELEGRAM_BOT_TOKEN, ALLOWED_USER_IDS
-from db.database import create_tables
+from db.database import create_tables, get_stats, get_all_messages
 from bot.handlers import register_handlers
 from scheduler.scheduler import get_scheduler, load_pending_reminders
 
@@ -94,6 +94,28 @@ app = FastAPI(
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# ─── API v1 ────────────────────────────────────────────────────────────────────
+
+@app.get("/api/health")
+async def api_health():
+    """Проверка доступности сервиса."""
+    return {"status": "ok"}
+
+
+@app.get("/api/stats")
+async def api_stats():
+    """Базовая статистика для Dashboard."""
+    stats = await get_stats()
+    return stats
+
+
+@app.get("/api/messages")
+async def api_messages(limit: int = 100, offset: int = 0):
+    """История сообщений (все пользователи, последние сначала)."""
+    messages = await get_all_messages(limit=limit, offset=offset)
+    return messages
 
 
 # ─── Локальный запуск ──────────────────────────────────────────────────────────

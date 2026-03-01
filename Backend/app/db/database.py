@@ -119,6 +119,50 @@ async def get_history(user_id: int, limit: int = 12) -> list[dict]:
         return [{"role": r["role"], "content": r["content"]} for r in reversed(rows)]
 
 
+# ─── API helpers ──────────────────────────────────────────────────────────────
+
+async def get_all_messages(limit: int = 100, offset: int = 0) -> list[dict]:
+    """Все сообщения из chat_history (для REST API)."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT id, user_id, role, content, timestamp
+               FROM chat_history
+               ORDER BY id DESC
+               LIMIT ? OFFSET ?""",
+            (limit, offset),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+async def get_stats() -> dict:
+    """Базовая статистика для Dashboard."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        # Всего сообщений
+        cur = await db.execute("SELECT COUNT(*) FROM chat_history")
+        total_messages = (await cur.fetchone())[0]
+
+        # Всего напоминаний
+        cur = await db.execute("SELECT COUNT(*) FROM reminders")
+        total_reminders = (await cur.fetchone())[0]
+
+        # Активных напоминаний (не отправленных)
+        cur = await db.execute("SELECT COUNT(*) FROM reminders WHERE is_sent = 0")
+        active_reminders = (await cur.fetchone())[0]
+
+        # Уникальных пользователей
+        cur = await db.execute("SELECT COUNT(DISTINCT user_id) FROM chat_history")
+        unique_users = (await cur.fetchone())[0]
+
+    return {
+        "total_messages": total_messages,
+        "total_reminders": total_reminders,
+        "active_reminders": active_reminders,
+        "unique_users": unique_users,
+    }
+
+
 async def clear_history(user_id: int) -> None:
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM chat_history WHERE user_id = ?", (user_id,))
