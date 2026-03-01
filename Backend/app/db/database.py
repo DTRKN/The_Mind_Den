@@ -163,6 +163,60 @@ async def get_stats() -> dict:
     }
 
 
+# ─── Reminders API (REST) ─────────────────────────────────────────────────────
+
+async def get_all_active_reminders_api() -> list[dict]:
+    """Все активные (не отправленные) напоминания для REST API."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """SELECT id, user_id, text AS message, remind_at AS next_run,
+                      is_recurring, cron_expr, is_sent AS is_done, created_at
+               FROM reminders
+               ORDER BY remind_at ASC"""
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
+
+async def delete_reminder_api(reminder_id: int) -> bool:
+    """Удалить напоминание по ID (без проверки user_id — для REST API)."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "DELETE FROM reminders WHERE id = ?",
+            (reminder_id,),
+        )
+        await db.commit()
+        return cursor.rowcount > 0
+
+
+async def add_reminder_api(
+    user_id: int,
+    text: str,
+    remind_at: datetime,
+    cron_expr: str | None = None,
+    is_recurring: bool = False,
+) -> dict:
+    """Создать напоминание через REST API. Возвращает созданную запись."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """INSERT INTO reminders (user_id, text, remind_at, cron_expr, is_recurring)
+               VALUES (?, ?, ?, ?, ?)""",
+            (user_id, text, remind_at.isoformat(), cron_expr, int(is_recurring)),
+        )
+        await db.commit()
+        new_id = cursor.lastrowid
+        db.row_factory = aiosqlite.Row
+        cur2 = await db.execute(
+            """SELECT id, user_id, text AS message, remind_at AS next_run,
+                      is_recurring, cron_expr, is_sent AS is_done, created_at
+               FROM reminders WHERE id = ?""",
+            (new_id,),
+        )
+        row = await cur2.fetchone()
+        return dict(row)
+
+
 async def clear_history(user_id: int) -> None:
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("DELETE FROM chat_history WHERE user_id = ?", (user_id,))

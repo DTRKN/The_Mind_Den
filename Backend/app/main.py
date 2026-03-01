@@ -8,16 +8,22 @@ main.py
 import sys
 import os
 import logging
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 # Добавляем app/ в Python path, чтобы `from bot.handlers` находил app/bot/handlers.py
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from telegram.ext import ApplicationBuilder
 
 from config import TELEGRAM_BOT_TOKEN, ALLOWED_USER_IDS
-from db.database import create_tables, get_stats, get_all_messages
+from db.database import (
+    create_tables, get_stats, get_all_messages,
+    get_all_active_reminders_api, delete_reminder_api, add_reminder_api,
+)
 from bot.handlers import register_handlers
 from scheduler.scheduler import get_scheduler, load_pending_reminders
 
@@ -30,8 +36,9 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-# ─── Глобальный экземпляр telegram Application ────────────────────────────────
+# ─── Глобальные переменные ────────────────────────────────────────────────────
 _tg_app = None
+_start_time: float = 0.0
 
 
 def get_tg_app():
@@ -41,7 +48,8 @@ def get_tg_app():
 # ─── FastAPI lifespan ──────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _tg_app
+    global _tg_app, _start_time
+    _start_time = time.time()
 
     if not TELEGRAM_BOT_TOKEN:
         logger.error("TELEGRAM_BOT_TOKEN не задан в .env!")
@@ -100,22 +108,69 @@ async def health():
 
 @app.get("/api/health")
 async def api_health():
-    """Проверка доступности сервиса."""
-    return {"status": "ok"}
+    """Расширенная проверка: статус бота, шедулера, uptime."""
+    scheduler = get_scheduler()
+    return {
+        "status": "ok",
+        "bot_running": _tg_app is not None and _tg_app.running,
+        "scheduler_running": scheduler.running,
+        "version": "0.1.0",
+    }
 
 
 @app.get("/api/stats")
 async def api_stats():
     """Базовая статистика для Dashboard."""
     stats = await get_stats()
+    stats["uptime_seconds"] = int(time.time() - _start_time) if _start_time else 0
     return stats
 
 
 @app.get("/api/messages")
 async def api_messages(limit: int = 100, offset: int = 0):
     """История сообщений (все пользователи, последние сначала)."""
-    messages = await get_all_messages(limit=limit, offset=offset)
-    return messages
+    return await get_all_messages(limit=limit, offset=offset)
+
+
+# ─── Reminders CRUD ────────────────────────────────────────────────────────────
+
+class ReminderCreateRequest(BaseModel):
+    user_id: int = 0
+    message: str
+    next_run: str  # ISO datetime string
+    is_recurring: bool = False
+    cron_expr: str | None = None
+
+
+@app.get("/api/reminders")
+async def api_reminders_list():
+    """Список всех напоминаний."""
+    return await get_all_active_reminders_api()
+
+
+@app.post("/api/reminders", status_code=201)
+async def api_reminders_create(body: ReminderCreateRequest):
+    """Создать напоминание через REST API."""
+    try:
+        remind_at = datetime.fromisoformat(body.next_run)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="next_run: неверный формат ISO datetime")
+    record = await add_reminder_api(
+        user_id=body.user_id,
+        text=body.message,
+        remind_at=remind_at,
+        cron_expr=body.cron_expr,
+        is_recurring=body.is_recurring,
+    )
+    return record
+
+
+@app.delete("/api/reminders/{reminder_id}", status_code=204)
+async def api_reminders_delete(reminder_id: int):
+    """Удалить напоминание по ID."""
+    deleted = await delete_reminder_api(reminder_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Напоминание не найдено")
 
 
 # ─── Локальный запуск ──────────────────────────────────────────────────────────
