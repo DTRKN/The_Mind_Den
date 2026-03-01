@@ -149,3 +149,25 @@
 
 ### Заметки для следующей итерации
 - Следующие задачи с выполненными зависимостями: TASK-007 (high), TASK-008 (high)
+
+---
+
+## [TASK-007] Реализация reminder_tool с поддержкой Pydantic и cron_expr
+**Дата и время:** 2026-03-01 18:00
+**Статус:** done
+
+### Что сделано
+- `Backend/app/agent/tools/reminder_tool.py` — Pydantic модель `ReminderToolInput` (action, message, datetime, recurring, cron_expr, id) с валидатором datetime. Функция `run_reminder_tool()` реализует create/list/delete
+- `Backend/app/db/database.py` — `create_tables()` добавляет колонки `cron_expr TEXT` и `is_recurring INTEGER DEFAULT 0`; `add_reminder()` принимает опциональные `cron_expr` и `is_recurring`; автомиграция через `ALTER TABLE` с try/except
+- `Backend/app/scheduler/scheduler.py` — добавлена `schedule_recurring_reminder()` с `CronTrigger` от APScheduler
+- `Backend/app/agent/agent.py` — `_handle_reminder()` теперь делегирует в `run_reminder_tool()` через `ReminderToolInput(**args)` с валидацией
+- `Backend/requirements.txt` — добавлен `pydantic>=2.0.0` явно
+
+### Тесты
+- Шаг 1 (бот запустился + БД инциализирована): ✅ — чистый старт, БД мигрировала, "Загружено 0 напоминаний"
+- Шаг 2 (Pydantic модель: все 4 сценария): ✅ — create, list, delete, cron — ALL TESTS PASSED
+- Шаг 3 (health эндпоинт): ✅ — `{"status":"ok"}`
+
+### Заметки для следующей итерации
+- TASK-008 (high): реализовать `GET /api/health`, `/api/stats`, `/api/messages` в FastAPI
+- Для реального теста отправки напоминания через 1 мин нужно остановить Docker-контейнер

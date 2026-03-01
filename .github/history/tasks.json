@@ -138,7 +138,7 @@
         "3. Дождаться уведомления через 1 минуту"
       ],
       "dependencies": ["TASK-006"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-008",
