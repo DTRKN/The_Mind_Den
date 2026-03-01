@@ -49,4 +49,30 @@
 ### Заметки для следующей итерации
 - Хостовый порт backend: **8001** (не 8000 — занят другим проектом)
 - TASK-004 (FastAPI) нужно добавить uvicorn в `main.py` — сейчас там только telegram bot
-- TASK-003 требует Node.js/npm для создания Vite проекта
+- TASK-004 (FastAPI) добавить uvicorn в `main.py` backend/app/ — сейчас только telegram bot
+
+---
+
+## [TASK-003] Инициализация React + Vite фронтенда
+**Дата:** 2026-03-01  
+**Статус:** done
+
+### Что сделано
+- Создан Vite React+TS проект в `frontend/` (вручную, npx create-vite блокировался из-за TTY)
+- Дизайн: **Mission Control** — тёмная тема, боковая навигация, неоновые акценты, полупрозрачные панели
+- Стек: Vite 5, React 18, TypeScript, Tailwind CSS, React Router v6, TanStack Query v5
+- Страницы: Dashboard, Reminders, History, Skills
+- API клиент: `frontend/src/api/client.ts`
+- `frontend/Dockerfile` — multi-stage: node:20-alpine → nginx:alpine
+- `frontend/nginx.conf` — SPA fallback + proxy `/api/` → `backend:8000`
+- `docker-compose.yml` добавлен сервис `frontend`, порт `5173:80`
+
+### Тесты
+- Шаг 1 (`docker compose up --build -d frontend`): ✅ — образ собран, контейнер `running`
+- Шаг 2 (http://localhost:5173): ✅ — HTTP 200, title: "The Mind Den · Mission Control"
+- Шаг 3 (стартовая страница): ✅ — открывается Dashboard с боковой навигацией
+
+### Заметки для следующей итерации
+- TASK-004: добавить FastAPI + uvicorn в `backend/app/main.py`, порт 8000 внутри контейнера
+- TASK-008: `/api/health`, `/api/stats`, `/api/messages` нужны для работы Dashboard
+- Фронтенд целиком готов к подключению — все просьбы к `/api/*` идут через nginx proxy

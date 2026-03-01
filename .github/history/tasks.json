@@ -69,7 +69,7 @@
         "3. Убедиться, что открывается стартовая страница Vite/React"
       ],
       "dependencies": ["TASK-002"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-004",
