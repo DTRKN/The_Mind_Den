@@ -1,0 +1,383 @@
+{
+  "agent_instructions": {
+    "before_start": [
+      "Прочитай этот файл и git log --oneline -20",
+      "Выбери ОДНУ задачу со статусом pending и наивысшим приоритетом",
+      "Проверь, что все dependencies этой задачи имеют статус done"
+    ],
+    "during_work": [
+      "Работай только над выбранной задачей",
+      "Делай коммиты после каждого логического изменения",
+      "Не трогай код, не связанный с текущей задачей"
+    ],
+    "before_finish": [
+      "Выполни ВСЕ test_steps из задачи",
+      "Меняй status на done ТОЛЬКО после успешного прохождения всех тестов",
+      "Напиши summary в .github\\history\\progress.md",
+      "ЗАПРЕЩЕНО удалять или редактировать задачи — только менять status"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "category": "infrastructure",
+      "priority": "critical",
+      "description": "Отрефакторить структуру проекта (перенос кода в backend/app)",
+      "acceptance_criteria": [
+        "Код из папки `Backend` перемещен в `backend/app/`",
+        "Обновлен путь до requirements.txt и импорты",
+        "Создан `backend/Dockerfile`, приложение корректно запускается"
+      ],
+      "test_steps": [
+        "1. Запустить python main.py из новой директории",
+        "2. Убедиться, что телеграм-бот стартует без ошибок",
+        "3. Проверить команды бота, они должны работать штатно"
+      ],
+      "dependencies": [],
+      "status": "done"
+    },
+    {
+      "id": "TASK-002",
+      "category": "infrastructure",
+      "priority": "critical",
+      "description": "Настройка Docker Compose для backend сервиса",
+      "acceptance_criteria": [
+        "Создан `docker-compose.yml` в корне проекта",
+        "Подключены volume для данных SQLite базы"
+      ],
+      "test_steps": [
+        "1. Запустить `docker compose up --build -d backend`",
+        "2. Убедиться, что бот в сети и отвечает на команды",
+        "3. Перезапустить контейнер и проверить, что история сообщений сохранилась"
+      ],
+      "dependencies": ["TASK-001"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-003",
+      "category": "infrastructure",
+      "priority": "critical",
+      "description": "Инициализация React + Vite фронтенда",
+      "acceptance_criteria": [
+        "Сгенерирован Vite React+TS проект в папке `frontend`",
+        "Добавлен `frontend/Dockerfile` на базе nginx",
+        "Фронтенд добавлен в `docker-compose.yml`"
+      ],
+      "test_steps": [
+        "1. Выполнить `docker compose up --build -d frontend`",
+        "2. Открыть http://localhost:5173",
+        "3. Убедиться, что открывается стартовая страница Vite/React"
+      ],
+      "dependencies": ["TASK-002"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-004",
+      "category": "functional",
+      "priority": "critical",
+      "description": "Интеграция FastAPI с python-telegram-bot и APScheduler",
+      "acceptance_criteria": [
+        "Создано FastAPI приложение в `backend/app/main.py`",
+        "FastAPI управляет lifespan (старт/стоп) телеграм-бота и шедулера"
+      ],
+      "test_steps": [
+        "1. Запустить сервер uvicorn (или через docker)",
+        "2. Запросить /docs и убедиться, что FastAPI отвечает",
+        "3. Проверить, что бот в Telegram при этом продолжает обрабатывать сообщения"
+      ],
+      "dependencies": ["TASK-001"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-005",
+      "category": "ui",
+      "priority": "high",
+      "description": "Внедрение UX правил (минималистичный старт, невидимые тулзы)",
+      "acceptance_criteria": [
+        "При `/start` бот отвечает только 'Привет! Чем могу помочь?'",
+        "Удалены длинные списки команд из обработчиков"
+      ],
+      "test_steps": [
+        "1. В Telegram написать `/start`",
+        "2. Убедиться, что бот не выводит меню команд",
+        "3. Написать тестовое сообщение и убедиться, что бот ведет диалог естественно"
+      ],
+      "dependencies": ["TASK-001"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-006",
+      "category": "functional",
+      "priority": "critical",
+      "description": "Создание Agent Runner и унифицированного цикла инструментов",
+      "acceptance_criteria": [
+        "Логика разбора intent'ов и вызова tools перенесена в единый класс AgentRunner",
+        "Запросы к OpenRouter поддерживают tool_calls"
+      ],
+      "test_steps": [
+        "1. Запустить бота с обновленной логикой",
+        "2. Задать простой вопрос (без тулзов)",
+        "3. Убедиться, что ответ формируется корректно через OpenRouter"
+      ],
+      "dependencies": ["TASK-004"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-007",
+      "category": "functional",
+      "priority": "high",
+      "description": "Реализация reminder_tool с поддержкой Pydantic и cron_expr",
+      "acceptance_criteria": [
+        "Определена Pydantic модель `ReminderToolInput`",
+        "БД поддерживает `cron_expr` и `is_recurring`",
+        "Функция тулза интегрирована в AgentRunner"
+      ],
+      "test_steps": [
+        "1. Написать боту: 'напомни мне через 1 минуту выпить воды'",
+        "2. Убедиться, что бот не сообщает технические детали вызова, а отвечает кратко",
+        "3. Дождаться уведомления через 1 минуту"
+      ],
+      "dependencies": ["TASK-006"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-008",
+      "category": "integration",
+      "priority": "high",
+      "description": "Создание REST API эндпоинтов для базовой статистики и сообщений",
+      "acceptance_criteria": [
+        "Реализованы эндпоинты `GET /api/health`, `GET /api/stats`",
+        "Реализован эндпоинт `GET /api/messages` для загрузки истории"
+      ],
+      "test_steps": [
+        "1. Отправить запрос `GET /api/health` — ожидать 200 OK",
+        "2. Отправить `GET /api/messages` — убедиться, что JSON возвращает массив истории"
+      ],
+      "dependencies": ["TASK-004"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-009",
+      "category": "ui",
+      "priority": "high",
+      "description": "Базовый layout фронтенда и страница Dashboard",
+      "acceptance_criteria": [
+        "Настроен React Router",
+        "Создана страница Dashboard, отображающая данные из `/api/stats` и `/api/health`"
+      ],
+      "test_steps": [
+        "1. Открыть веб-интерфейс",
+        "2. Убедиться, что Dashboard загружается",
+        "3. Проверить, что статистика корректно подтягивается с бэкенда"
+      ],
+      "dependencies": ["TASK-003", "TASK-008"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-010",
+      "category": "integration",
+      "priority": "high",
+      "description": "Создание REST API эндпоинтов для CRUD напоминаний",
+      "acceptance_criteria": [
+        "`GET /api/reminders` возвращает список",
+        "`POST /api/reminders` и `DELETE /api/reminders/{id}` работают с БД"
+      ],
+      "test_steps": [
+        "1. Отправить `GET /api/reminders` — проверить структуру JSON",
+        "2. Создать напоминание через `POST` и удалить через `DELETE`"
+      ],
+      "dependencies": ["TASK-007"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-011",
+      "category": "ui",
+      "priority": "high",
+      "description": "Разработка страницы Reminders во Frontend",
+      "acceptance_criteria": [
+        "Страница Reminders показывает таблицу/список активных напоминаний",
+        "Реализовано удаление и создание через веб-интерфейс"
+      ],
+      "test_steps": [
+        "1. Открыть раздел Reminders во фронтенде",
+        "2. Удалить существующее напоминание, проверить исчезновение",
+        "3. Добавить новое, убедиться, что оно появилось в БД"
+      ],
+      "dependencies": ["TASK-009", "TASK-010"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-012",
+      "category": "infrastructure",
+      "priority": "high",
+      "description": "Интеграция sqlite-vec для векторной БД",
+      "acceptance_criteria": [
+        "Подключено расширение `sqlite-vec` к aiosqlite",
+        "Создана таблица `memory` с BLOB полем для embedding"
+      ],
+      "test_steps": [
+        "1. Запустить скрипт инициализации БД",
+        "2. Выполнить селект `SELECT vec_version();`",
+        "3. Убедиться в отсутствии ошибок"
+      ],
+      "dependencies": ["TASK-001"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-013",
+      "category": "integration",
+      "priority": "high",
+      "description": "Реализация генерации Embeddings",
+      "acceptance_criteria": [
+        "Добавлена функция вызова `text-embedding-3-small`",
+        "Данные конвертируются во float32"
+      ],
+      "test_steps": [
+        "1. Вызвать функцию генерации эмбеддинга для строки 'test'",
+        "2. Убедиться, что возвращается массив float"
+      ],
+      "dependencies": ["TASK-001"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-014",
+      "category": "functional",
+      "priority": "high",
+      "description": "Реализация memory_tool",
+      "acceptance_criteria": [
+        "Создана Pydantic модель `MemoryToolInput`",
+        "Функция сохраняет данные в БД и ищет по косинусному сходству",
+        "Интеграция с AgentRunner для автоподстановки контекста"
+      ],
+      "test_steps": [
+        "1. Написать боту: 'запомни, что мой любимый цвет синий'",
+        "2. Сбросить контекст чата (/clear или подождать)",
+        "3. Спросить: 'какой мой любимый цвет?'",
+        "4. Агент должен использовать memory_tool и ответить правильно"
+      ],
+      "dependencies": ["TASK-006", "TASK-012", "TASK-013"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-015",
+      "category": "functional",
+      "priority": "medium",
+      "description": "Реализация web_search_tool через Tavily API",
+      "acceptance_criteria": [
+        "Настроен HTTP клиент к Tavily",
+        "Создан тул `web_search_tool` с входной моделью `WebSearchToolInput`",
+        "Интегрировано в AgentRunner"
+      ],
+      "test_steps": [
+        "1. Задать боту вопрос о новостях: 'какая сегодня погода в Москве?'",
+        "2. Убедиться, что бот делает поиск и возвращает актуальный ответ"
+      ],
+      "dependencies": ["TASK-006"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-016",
+      "category": "security",
+      "priority": "high",
+      "description": "Реализация file_tool с изоляцией путей",
+      "acceptance_criteria": [
+        "Pydantic модель `FileToolInput`",
+        "Ограничение операций (read, list, write) только папкой `WORKSPACE_DIR`"
+      ],
+      "test_steps": [
+        "1. Попросить бота 'создай файл test.txt с текстом hello'",
+        "2. Проверить, что файл появился в `WORKSPACE_DIR`",
+        "3. Попросить прочитать `/etc/passwd` — бот должен получить отказ"
+      ],
+      "dependencies": ["TASK-006"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-017",
+      "category": "functional",
+      "priority": "high",
+      "description": "Механизм загрузки и внедрения скиллов в system prompt",
+      "acceptance_criteria": [
+        "`skills/loader.py` читает маркдаун файлы скиллов",
+        "Прочитанные данные инжектируются в system prompt AgentRunner"
+      ],
+      "test_steps": [
+        "1. Поместить валидный SKILL.md в папку `skills/test_skill`",
+        "2. Стартовать приложение",
+        "3. Проверить логи: скилл должен быть успешно загружен"
+      ],
+      "dependencies": ["TASK-006"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-018",
+      "category": "functional",
+      "priority": "medium",
+      "description": "Реализация skill_tool",
+      "acceptance_criteria": [
+        "Модель `SkillToolInput`",
+        "Тулз создаёт новую папку и SKILL.md по запросу от агента"
+      ],
+      "test_steps": [
+        "1. Написать боту: 'сделай скилл для перевода текста на японский'",
+        "2. Убедиться, что бот вызывает тул и создает файл в `skills/`"
+      ],
+      "dependencies": ["TASK-017"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-019",
+      "category": "integration",
+      "priority": "medium",
+      "description": "REST API эндпоинты `/api/skills`",
+      "acceptance_criteria": [
+        "GET возвращает список загруженных скиллов",
+        "POST позволяет создать новый скилл"
+      ],
+      "test_steps": [
+        "1. Вызвать GET /api/skills",
+        "2. Убедиться, что возвращается список текущих загруженных скиллов"
+      ],
+      "dependencies": ["TASK-008", "TASK-018"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-020",
+      "category": "ui",
+      "priority": "medium",
+      "description": "Разработка страницы Skills во Frontend",
+      "acceptance_criteria": [
+        "Страница отображает карточки активных скиллов",
+        "Кнопка ручной синхронизации списка",
+        "Отображает детали скилла (description)"
+      ],
+      "test_steps": [
+        "1. Открыть веб-интерфейс в разделе Skills",
+        "2. Убедиться в наличии карточек текущих скиллов",
+        "3. Проверить корректность отображения описания"
+      ],
+      "dependencies": ["TASK-009", "TASK-019"],
+      "status": "pending"
+    },
+    {
+      "id": "TASK-021",
+      "category": "functional",
+      "priority": "high",
+      "description": "Интеграция голосовой транскрипции через Groq Whisper",
+      "notes": "Используется Groq SDK",
+      "acceptance_criteria": [
+        "Голосовые сообщения из Telegram скачиваются и передаются в Groq Whisper API",
+        "Транскрибированный текст передаётся в AgentRunner как обычное сообщение",
+        "GROQ_API_KEY читается из config.py",
+        "Временный аудиофайл удаляется после транскрипции"
+      ],
+      "test_steps": [
+        "1. Отправить голосовое сообщение боту",
+        "2. Убедиться, что бот распознаёт речь и отвечает по содержанию",
+        "3. Убедиться, что временный файл не остался на диске"
+      ],
+      "dependencies": ["TASK-006"],
+      "status": "pending"
+    }
+  ]
+}
