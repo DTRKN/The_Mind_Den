@@ -1,10 +1,23 @@
+import sqlite3
 import aiosqlite
+import sqlite_vec
 from datetime import datetime
 from config import DB_PATH
 
 
+async def _load_vec_extension(db: aiosqlite.Connection) -> None:
+    """Загружает sqlite-vec внутри потока aiosqlite (thread-safe)."""
+    def _inner():
+        db._connection.enable_load_extension(True)  # type: ignore[attr-defined]
+        sqlite_vec.load(db._connection)  # type: ignore[attr-defined]
+        db._connection.enable_load_extension(False)  # type: ignore[attr-defined]
+    await db._execute(_inner)  # type: ignore[attr-defined]
+
+
 async def create_tables() -> None:
     async with aiosqlite.connect(DB_PATH) as db:
+        # Загружаем sqlite-vec через aiosqlite-thread (thread-safe)
+        await _load_vec_extension(db)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS reminders (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +46,15 @@ async def create_tables() -> None:
                 role        TEXT    NOT NULL,
                 content     TEXT    NOT NULL,
                 timestamp   TEXT    NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS memory (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id    INTEGER NOT NULL,
+                content    TEXT    NOT NULL,
+                embedding  BLOB,
+                created_at TEXT    NOT NULL DEFAULT (datetime('now'))
             )
         """)
         await db.commit()
