@@ -243,17 +243,20 @@
       "id": "TASK-014",
       "category": "functional",
       "priority": "high",
-      "description": "Реализация memory_tool",
+      "description": "Реализация memory_tool с Pinecone как векторной БД",
       "acceptance_criteria": [
         "Создана Pydantic модель `MemoryToolInput`",
-        "Функция сохраняет данные в БД и ищет по косинусному сходству",
-        "Интеграция с AgentRunner для автоподстановки контекста"
+        "Векторы хранятся в Pinecone (serverless index, cosine metric, 1536 dims)",
+        "Функция сохраняет данные в Pinecone (upsert) и ищет по семантическому сходству (query)",
+        "Интеграция с AgentRunner: автоматическая подстановка релевантных воспоминаний в контекст",
+        "PINECONE_API_KEY и PINECONE_INDEX_NAME читаются из config.py"
       ],
       "test_steps": [
         "1. Написать боту: 'запомни, что мой любимый цвет синий'",
         "2. Сбросить контекст чата (/clear или подождать)",
         "3. Спросить: 'какой мой любимый цвет?'",
-        "4. Агент должен использовать memory_tool и ответить правильно"
+        "4. Агент должен использовать memory_tool и ответить правильно",
+        "5. py_compile memory_tool.py — нет синтаксических ошибок"
       ],
       "dependencies": ["TASK-006", "TASK-012", "TASK-013"],
       "status": "pending"

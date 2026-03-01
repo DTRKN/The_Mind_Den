@@ -19,6 +19,10 @@ OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.
 # OpenAI (для embeddings text-embedding-3-small)
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
+# Pinecone (векторная БД для memory_tool)
+PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
+PINECONE_INDEX_NAME: str = os.getenv("PINECONE_INDEX_NAME", "the-mind-den-memory")
+
 # Groq
 GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
 

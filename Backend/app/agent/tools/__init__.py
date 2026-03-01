@@ -48,4 +48,38 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "memory_tool",
+            "description": (
+                "Долгосрочная память агента на базе Pinecone. "
+                "Сохраняет важную информацию о пользователе, "
+                "ищет релевантные воспоминания по смысловому запросу, "
+                "или возвращает список всех сохранённых фактов."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["save", "search", "list"],
+                        "description": "save — сохранить факт, search — найти по запросу, list — все воспоминания",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": (
+                            "Текст факта для сохранения (action=save) "
+                            "или поисковый запрос (action=search)"
+                        ),
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Максимальное число результатов (action=search или action=list), по умолчанию 5",
+                    },
+                },
+                "required": ["action"],
+            },
+        },
+    },
 ]

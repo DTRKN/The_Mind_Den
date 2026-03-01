@@ -63,8 +63,16 @@ class AgentRunner:
         """Выполняет агентный цикл и возвращает итоговый текст ответа."""
         history = await get_history(user_id, limit=20)
 
+        # Автоматически подставляем релевантные воспоминания из Pinecone
+        from agent.tools.memory_tool import get_memory_context
+        memory_ctx = await get_memory_context(user_id, message)
+
+        system_content = build_system_prompt(self.skills_text)
+        if memory_ctx:
+            system_content = f"{system_content}\n\n{memory_ctx}"
+
         messages: list[dict] = [
-            {"role": "system", "content": build_system_prompt(self.skills_text)},
+            {"role": "system", "content": system_content},
             *history,
             {"role": "user", "content": message},
         ]
@@ -144,6 +152,7 @@ class AgentRunner:
 
         handlers = {
             "reminder_tool": self._handle_reminder,
+            "memory_tool": self._handle_memory,
         }
 
         handler = handlers.get(tool_name)
@@ -167,3 +176,12 @@ class AgentRunner:
         except Exception as e:
             return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
         return await run_reminder_tool(data, user_id, self.app)
+
+    async def _handle_memory(self, user_id: int, args: dict) -> dict:
+        """memory_tool: сохраняет/ищет воспоминания в Pinecone."""
+        from agent.tools.memory_tool import MemoryToolInput, run_memory_tool
+        try:
+            data = MemoryToolInput(**args)
+        except Exception as e:
+            return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
+        return await run_memory_tool(data, user_id)
