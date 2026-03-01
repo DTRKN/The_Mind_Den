@@ -160,62 +160,10 @@ class AgentRunner:
     # ─── Реализации инструментов ───────────────────────────────────────────────
 
     async def _handle_reminder(self, user_id: int, args: dict) -> dict:
-        """reminder_tool: create / list / delete."""
-        from db.database import (
-            add_reminder,
-            get_user_reminders,
-            delete_reminder,
-        )
-
-        action = args.get("action")
-
-        if action == "create":
-            message = args.get("message", "Напоминание")
-            datetime_str = args.get("datetime")
-            if not datetime_str:
-                return {"success": False, "error": "Не указано время напоминания (datetime)"}
-
-            try:
-                remind_at = datetime.fromisoformat(datetime_str)
-            except ValueError:
-                return {"success": False, "error": f"Неверный формат datetime: {datetime_str}"}
-
-            if remind_at <= datetime.now():
-                return {"success": False, "error": "Указанное время уже в прошлом"}
-
-            reminder_id = await add_reminder(user_id, message, remind_at)
-
-            if self.app:
-                from scheduler.scheduler import schedule_reminder
-                await schedule_reminder(self.app, reminder_id, user_id, message, remind_at)
-
-            return {
-                "success": True,
-                "data": {
-                    "id": reminder_id,
-                    "message": message,
-                    "datetime": remind_at.isoformat(),
-                },
-            }
-
-        if action == "list":
-            reminders = await get_user_reminders(user_id)
-            # Конвертируем в простые dict для JSON
-            data = [
-                {
-                    "id": r["id"],
-                    "message": r.get("text", r.get("message", "")),
-                    "remind_at": r.get("remind_at", ""),
-                }
-                for r in reminders
-            ]
-            return {"success": True, "data": data}
-
-        if action == "delete":
-            rid = args.get("id")
-            if not rid:
-                return {"success": False, "error": "Не указан id напоминания"}
-            ok = await delete_reminder(int(rid), user_id)
-            return {"success": ok, "data": None}
-
-        return {"success": False, "error": f"Неизвестный action: {action}"}
+        """reminder_tool: делегирует в agent.tools.reminder_tool с Pydantic-валидацией."""
+        from agent.tools.reminder_tool import ReminderToolInput, run_reminder_tool
+        try:
+            data = ReminderToolInput(**args)
+        except Exception as e:
+            return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
+        return await run_reminder_tool(data, user_id, self.app)

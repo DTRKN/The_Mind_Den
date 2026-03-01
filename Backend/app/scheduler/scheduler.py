@@ -69,6 +69,40 @@ async def schedule_reminder(
     logger.info(f"Запланировано напоминание #{reminder_id} на {remind_at}")
 
 
+async def schedule_recurring_reminder(
+    app: Application,
+    reminder_id: int,
+    user_id: int,
+    text: str,
+    cron_expr: str,
+) -> None:
+    """Добавляет повторяющийся job по cron-выражению ('0 9 * * 1' и т.д.)."""
+    from apscheduler.triggers.cron import CronTrigger
+    parts = cron_expr.strip().split()
+    if len(parts) != 5:
+        logger.error(f"Неверный cron_expr '{cron_expr}' для напоминания #{reminder_id}")
+        return
+    minute, hour, day, month, day_of_week = parts
+    trigger = CronTrigger(
+        minute=minute,
+        hour=hour,
+        day=day,
+        month=month,
+        day_of_week=day_of_week,
+        timezone="Europe/Moscow",
+    )
+    scheduler = get_scheduler()
+    scheduler.add_job(
+        _send_reminder,
+        trigger=trigger,
+        args=[app, reminder_id, user_id, text],
+        id=f"reminder_{reminder_id}",
+        replace_existing=True,
+        misfire_grace_time=300,
+    )
+    logger.info(f"Запланировано повторяющееся напоминание #{reminder_id} cron={cron_expr}")
+
+
 async def load_pending_reminders(app: Application) -> None:
     """При старте загружает все невыполненные напоминания из БД."""
     now = datetime.now()

@@ -7,14 +7,25 @@ async def create_tables() -> None:
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS reminders (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER NOT NULL,
-                text        TEXT    NOT NULL,
-                remind_at   TEXT    NOT NULL,
-                created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-                is_sent     INTEGER NOT NULL DEFAULT 0
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id      INTEGER NOT NULL,
+                text         TEXT    NOT NULL,
+                remind_at    TEXT    NOT NULL,
+                cron_expr    TEXT,
+                is_recurring INTEGER NOT NULL DEFAULT 0,
+                created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+                is_sent      INTEGER NOT NULL DEFAULT 0
             )
         """)
+        # Миграция существующей таблицы: добавляем новые колонки если их нет
+        for col, definition in [
+            ("cron_expr",    "TEXT"),
+            ("is_recurring", "INTEGER NOT NULL DEFAULT 0"),
+        ]:
+            try:
+                await db.execute(f"ALTER TABLE reminders ADD COLUMN {col} {definition}")
+            except Exception:
+                pass  # колонка уже существует
         await db.execute("""
             CREATE TABLE IF NOT EXISTS chat_history (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,11 +40,17 @@ async def create_tables() -> None:
 
 # ─── Reminders ────────────────────────────────────────────────────────────────
 
-async def add_reminder(user_id: int, text: str, remind_at: datetime) -> int:
+async def add_reminder(
+    user_id: int,
+    text: str,
+    remind_at: datetime,
+    cron_expr: str | None = None,
+    is_recurring: bool = False,
+) -> int:
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
-            "INSERT INTO reminders (user_id, text, remind_at) VALUES (?, ?, ?)",
-            (user_id, text, remind_at.isoformat()),
+            "INSERT INTO reminders (user_id, text, remind_at, cron_expr, is_recurring) VALUES (?, ?, ?, ?, ?)",
+            (user_id, text, remind_at.isoformat(), cron_expr, int(is_recurring)),
         )
         await db.commit()
         return cursor.lastrowid
