@@ -171,3 +171,25 @@
 ### Заметки для следующей итерации
 - TASK-008 (high): реализовать `GET /api/health`, `/api/stats`, `/api/messages` в FastAPI
 - Для реального теста отправки напоминания через 1 мин нужно остановить Docker-контейнер
+
+---
+
+## [TASK-008] Создание REST API эндпоинтов для базовой статистики и сообщений
+**Дата и время:** 2026-03-01 18:15
+**Статус:** done
+
+### Что сделано
+- `Backend/app/db/database.py` — добавлены функции `get_all_messages(limit, offset)` и `get_stats()`: считают total_messages, total_reminders, active_reminders, unique_users
+- `Backend/app/main.py` — добавлены три эндпоинта под префиксом `/api/`:
+  - `GET /api/health` → `{"status": "ok"}`
+  - `GET /api/stats` → `{"total_messages": N, "total_reminders": N, "active_reminders": N, "unique_users": N}`
+  - `GET /api/messages` → массив объектов `{id, user_id, role, content, timestamp}` с параметрами `limit`/`offset`
+
+### Тесты
+- Шаг 1 (`GET /api/health`): ✅ — `{"status": "ok"}` 200 OK
+- Шаг 2 (`GET /api/messages`): ✅ — JSON-массив (пустой при чистой БД)
+- `GET /api/stats`: ✅ — `{"total_messages": 0, "total_reminders": 0, "active_reminders": 0, "unique_users": 0}`
+
+### Заметки для следующей итерации
+- TASK-009 (high): реализовать Dashboard фронтенда с данными из `/api/stats` и `/api/health`; зависимости TASK-003 и TASK-008 теперь оба done
+- TASK-010 (high): CRUD напоминаний через REST API; зависимость TASK-007 уже done

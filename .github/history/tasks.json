@@ -154,7 +154,7 @@
         "2. Отправить `GET /api/messages` — убедиться, что JSON возвращает массив истории"
       ],
       "dependencies": ["TASK-004"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-009",
