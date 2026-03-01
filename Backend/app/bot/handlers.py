@@ -33,12 +33,12 @@ from telegram.ext import (
 from datetime import datetime
 
 from config import ALLOWED_USER_IDS
-from bot.ai_handler import chat, get_model, set_model, POPULAR_MODELS
+from bot.ai_handler import POPULAR_MODELS
 from bot.code_handler import code_chat
-from bot.reminder_handler import handle_reminder_text, cmd_reminders, cmd_cancel
+from bot.reminder_handler import cmd_reminders, cmd_cancel
 from bot.voice_handler import transcribe_voice
 from db.database import clear_history
-from utils.parser import is_reminder_request
+from agent.agent import AgentRunner, get_model, set_model
 
 logger = logging.getLogger(__name__)
 
@@ -65,47 +65,19 @@ def whitelist_only(func):
 
 @whitelist_only
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.effective_user
     context.user_data["mode"] = MODE_CHAT
-    await update.message.reply_text(
-        f"👋 Привет, {user.first_name}!\n\n"
-        "Я твой личный AI-ассистент. Вот что я умею:\n\n"
-        "💬 *AI-чат* — просто напиши мне сообщение\n"
-        "⏰ *Напоминания* — _напомни в 17:00 съесть морковь_\n"
-        "💻 *Code Assistant* — /code → пиши задачи для проекта\n"
-        "🎙 *Голос* — отправь голосовое — переведу в текст и отвечу\n\n"
-        "*Команды:*\n"
-        "/code — режим кодинга (работа с файлами проекта)\n"
-        "/chat — вернуться в режим чата\n"
-        "/model `<name>` — сменить AI-модель\n"
-        "/models — список моделей\n"
-        "/reminders — активные напоминания\n"
-        "/cancel `<id>` — удалить напоминание\n"
-        "/clear — очистить историю чата\n"
-        "/status — статус бота и текущее время",
-        parse_mode="Markdown",
-    )
+    await update.message.reply_text("Привет! Чем могу помочь?")
 
 
 @whitelist_only
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await cmd_start(update, context)
+    await update.message.reply_text("Привет! Чем могу помочь?")
 
 
 @whitelist_only
 async def cmd_code_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data["mode"] = MODE_CODE
-    await update.message.reply_text(
-        "💻 *Code Assistant режим активирован*\n\n"
-        "Теперь я буду работать с файлами твоего проекта.\n"
-        "Примеры запросов:\n"
-        "• _создай страницу Dashboard по пути gravity\\_claw/pages/Dashboard.tsx_\n"
-        "• _покажи структуру проекта_\n"
-        "• _прочитай файл Backend/config.py_\n"
-        "• _сделай git commit с сообщением 'feat: add dashboard'_\n\n"
-        "Для возврата в чат: /chat",
-        parse_mode="Markdown",
-    )
+    await update.message.reply_text("Режим работы с кодом. Для обычного чата: /chat")
 
 
 @whitelist_only
@@ -172,7 +144,7 @@ async def _process_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text
     """Основная логика обработки текста (используется и для голосовых)."""
     mode = context.user_data.get("mode", MODE_CHAT)
 
-    # Code assistant режим
+    # Code assistant режим (legacy)
     if mode == MODE_CODE:
         await update.message.chat.send_action("typing")
         reply = await code_chat(text)
@@ -180,14 +152,10 @@ async def _process_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text
             await update.message.reply_text(chunk, parse_mode="Markdown")
         return
 
-    # Проверяем на напоминание
-    if is_reminder_request(text):
-        await handle_reminder_text(update, context, text)
-        return
-
-    # Обычный AI-чат
+    # AgentRunner — единый цикл: сам решает какие tools вызвать
     await update.message.chat.send_action("typing")
-    reply = await chat(update.effective_user.id, text)
+    runner = AgentRunner(app=context.application)
+    reply = await runner.run(update.effective_user.id, text)
     for chunk in _split_message(reply):
         await update.message.reply_text(chunk, parse_mode="Markdown")
 
