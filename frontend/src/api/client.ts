@@ -54,6 +54,14 @@ export type Reminder = {
   created_at: string
 }
 
+export type Skill = {
+  name: string
+  title?: string
+  description: string
+  content: string
+  path: string
+}
+
 export const api = {
   health: () => get<HealthResponse>('/health'),
   stats: () => get<StatsResponse>('/stats'),
@@ -63,5 +71,10 @@ export const api = {
     delete: (id: number) => del(`/reminders/${id}`),
     create: (body: { message: string; next_run: string; user_id?: number; is_recurring?: boolean; cron_expr?: string | null }) =>
       apiPost<Reminder>('/reminders', body),
+  },
+  skills: {
+    list: () => get<Skill[]>('/skills'),
+    create: (body: { name: string; title: string; description: string; content?: string }) =>
+      apiPost<Skill>('/skills', body),
   },
 }
