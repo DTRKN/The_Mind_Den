@@ -103,7 +103,7 @@
         "3. Написать тестовое сообщение и убедиться, что бот ведет диалог естественно"
       ],
       "dependencies": ["TASK-001"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-006",
@@ -120,7 +120,7 @@
         "3. Убедиться, что ответ формируется корректно через OpenRouter"
       ],
       "dependencies": ["TASK-004"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-007",

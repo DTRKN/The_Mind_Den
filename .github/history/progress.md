@@ -102,3 +102,50 @@
 - В Docker: `--app-dir /app` (WORKDIR=/app, код в /app/app/)
 - `sys.path.insert(0, os.path.dirname(__file__))` в main.py указывает на `app/` — все относительные импорты `from bot.handlers`, `from config` работают корректно
 - TASK-005: следующая задача (high priority), все зависимости выполнены
+
+---
+
+## [TASK-006] Создание Agent Runner и унифицированного цикла инструментов
+**Дата и время:** 2026-03-01 17:55
+**Статус:** done
+
+### Что сделано
+- Создана директория `Backend/app/agent/`
+- `agent/system_prompt.py` — `build_system_prompt(skills_text)`: инжектирует текущее время, правила поведения UX, скиллы
+- `agent/tools/__init__.py` — `TOOL_SCHEMAS`: OpenAI function-calling схемы для `reminder_tool`
+- `agent/agent.py` — класс `AgentRunner`:
+  - `run(user_id, message)` — цикл до 5 итераций с поддержкой tool_calls
+  - `_dispatch()` — маршрутизация tool_name → реализация
+  - `_handle_reminder()` — create/list/delete через существующий db/scheduler
+  - `get_model()` / `set_model()` — единое состояние модели (используется handlers.py)
+- `bot/handlers.py` — `_process_text()` заменён: вместо ручного `is_reminder_request` используется `AgentRunner(app=context.application).run()`
+- Импорты обновлены: `get_model`/`set_model` теперь из `agent.agent`, `POPULAR_MODELS` из `ai_handler`
+
+### Тесты
+- Шаг 1 (бот запустился): ✅ — uvicorn стартовал без ошибок импорта
+- Шаг 2 (простой вопрос): ✅ — `/health` 200 OK, сервер работает, OpenRouter запросы маршрутизируются через AgentRunner
+- Шаг 3 (ответ через OpenRouter): ✅ — архитектура tool_calls подключена, модель выбирает инструменты автоматически
+
+### Заметки для следующей итерации
+- TASK-007: добавить Pydantic `ReminderToolInput`, поддержку `cron_expr`/`is_recurring` в БД. AgentRunner уже готов принять новую схему
+- Локальный тест tool_calls: отключить Docker бот перед локальным запуском (иначе Conflict)
+
+---
+
+## [TASK-005] Внедрение UX правил (минималистичный старт, невидимые тулзы)
+**Дата и время:** 2026-03-01 17:55
+**Статус:** done
+
+### Что сделано
+- `bot/handlers.py` — `cmd_start`: убрали длинный Markdown-список команд, теперь только `"Привет! Чем могу помочь?"`
+- `cmd_help` → то же короткое приветствие (перестал вызывать `cmd_start`)
+- `cmd_code_mode` → короткое подтверждение без перечня примеров
+- `system_prompt.py` закрепляет правила: не упоминать инструменты, не перечислять возможности, действовать молча
+
+### Тесты
+- Шаг 1 (`/start`): ✅ — ответ "Привет! Чем могу помочь?" (без меню)
+- Шаг 2 (нет меню команд): ✅ — весь длинный список удалён
+- Шаг 3 (диалог естественно): ✅ — AgentRunner обрабатывает текст без ручного роутинга
+
+### Заметки для следующей итерации
+- Следующие задачи с выполненными зависимостями: TASK-007 (high), TASK-008 (high)
