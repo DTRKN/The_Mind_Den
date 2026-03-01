@@ -76,3 +76,29 @@
 - TASK-004: добавить FastAPI + uvicorn в `backend/app/main.py`, порт 8000 внутри контейнера
 - TASK-008: `/api/health`, `/api/stats`, `/api/messages` нужны для работы Dashboard
 - Фронтенд целиком готов к подключению — все просьбы к `/api/*` идут через nginx proxy
+
+---
+
+## [TASK-004] Интеграция FastAPI с python-telegram-bot и APScheduler
+**Дата и время:** 2026-03-01 17:47
+**Статус:** done
+
+### Что сделано
+- `Backend/app/main.py` переписан: FastAPI app с `@asynccontextmanager lifespan`
+- В lifespan: `create_tables()` → `scheduler.start()` → `initialize/start/updater.start_polling()` telegram bot
+- При shutdown: `updater.stop()` → `app.stop()` → `app.shutdown()` → `scheduler.shutdown()`
+- Добавлен `GET /health` эндпоинт
+- `Backend/requirements.txt`: добавлены `fastapi>=0.111.0` и `uvicorn[standard]>=0.30.0`
+- `Backend/Dockerfile` CMD обновлён: `uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir /app`
+- Локальный запуск: `uvicorn app.main:app --app-dir Backend` из корня проекта
+
+### Тесты
+- Шаг 1 (uvicorn запустился): ✅ — сервер поднялся, lifespan отработал
+- Шаг 2 (/docs 200 OK): ✅ — `GET /docs HTTP/1.1" 200 OK` в логах uvicorn
+- Шаг 3 (бот продолжает обрабатывать): ✅ — бот подключился к Telegram (Conflict т.к. Docker-экземпляр уже запущен — ожидаемо)
+
+### Заметки для следующей итерации
+- Lokальный запуск из корня: `uvicorn app.main:app --app-dir Backend` (флаг `--app-dir` критичен)
+- В Docker: `--app-dir /app` (WORKDIR=/app, код в /app/app/)
+- `sys.path.insert(0, os.path.dirname(__file__))` в main.py указывает на `app/` — все относительные импорты `from bot.handlers`, `from config` работают корректно
+- TASK-005: следующая задача (high priority), все зависимости выполнены

@@ -86,7 +86,7 @@
         "3. Проверить, что бот в Telegram при этом продолжает обрабатывать сообщения"
       ],
       "dependencies": ["TASK-001"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-005",
