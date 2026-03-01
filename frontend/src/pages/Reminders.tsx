@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, type Reminder } from '../api/client'
 
@@ -34,6 +35,66 @@ function ReminderCard({ reminder, onDelete }: { reminder: Reminder; onDelete: (i
   )
 }
 
+function AddReminderForm({ onAdded }: { onAdded: () => void }) {
+  const [msg, setMsg] = useState('')
+  const [dt, setDt] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const createMutation = useMutation({
+    mutationFn: () => api.reminders.create({ message: msg, next_run: dt }),
+    onSuccess: () => {
+      setMsg(''); setDt(''); setOpen(false); onAdded()
+    },
+  })
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#2a2a45] bg-[#13131f] hover:border-[#3b82f6]/40 text-[#475569] hover:text-[#3b82f6] text-sm transition-colors"
+      >
+        <span className="text-base leading-none">＋</span> Добавить
+      </button>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-[#3b82f6]/30 bg-[#13131f] p-4 flex flex-col gap-3">
+      <input
+        type="text"
+        placeholder="Текст напоминания..."
+        value={msg}
+        onChange={e => setMsg(e.target.value)}
+        className="bg-[#1a1a2e] border border-[#2a2a45] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6]/50"
+      />
+      <input
+        type="datetime-local"
+        value={dt}
+        onChange={e => setDt(e.target.value)}
+        className="bg-[#1a1a2e] border border-[#2a2a45] rounded-lg px-3 py-2 text-sm text-[#e2e8f0] focus:outline-none focus:border-[#3b82f6]/50"
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={() => createMutation.mutate()}
+          disabled={!msg.trim() || !dt || createMutation.isPending}
+          className="flex-1 py-2 rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/30 text-[#3b82f6] text-sm hover:bg-[#3b82f6]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {createMutation.isPending ? 'Сохраняю...' : 'Создать'}
+        </button>
+        <button
+          onClick={() => { setOpen(false); setMsg(''); setDt('') }}
+          className="px-4 py-2 rounded-lg border border-[#2a2a45] text-[#475569] text-sm hover:text-[#e2e8f0] transition-colors"
+        >
+          Отмена
+        </button>
+      </div>
+      {createMutation.isError && (
+        <div className="text-xs text-[#ef4444]">Ошибка: {(createMutation.error as Error).message}</div>
+      )}
+    </div>
+  )
+}
+
 export default function Reminders() {
   const queryClient = useQueryClient()
 
@@ -57,6 +118,7 @@ export default function Reminders() {
           <h1 className="text-2xl font-semibold text-[#e2e8f0]">Reminders</h1>
           <p className="text-sm text-[#475569] mt-1">Активных: {active.length}</p>
         </div>
+        <AddReminderForm onAdded={() => queryClient.invalidateQueries({ queryKey: ['reminders'] })} />
       </div>
 
       {isLoading ? (

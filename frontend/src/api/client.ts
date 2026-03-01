@@ -61,5 +61,7 @@ export const api = {
   reminders: {
     list: () => get<Reminder[]>('/reminders'),
     delete: (id: number) => del(`/reminders/${id}`),
+    create: (body: { message: string; next_run: string; user_id?: number; is_recurring?: boolean; cron_expr?: string | null }) =>
+      apiPost<Reminder>('/reminders', body),
   },
 }
