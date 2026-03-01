@@ -16,6 +16,9 @@ OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL") or os.getenv("MODEL", "openai/gpt-4o-mini")
 OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 
+# OpenAI (для embeddings text-embedding-3-small)
+OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
 # Groq
 GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
 
