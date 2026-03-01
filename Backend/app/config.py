@@ -3,20 +3,28 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Telegram
-TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+# Telegram — поддержка обоих вариантов имени переменной
+TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN", "")
 
 # Whitelist: список разрешённых Telegram user_id
-_raw_ids = os.getenv("ALLOWED_USER_IDS", "")
+# Поддержка ALLOWED_USER_IDS (список через запятую) и ALLOWED_USER_ID (один ID)
+_raw_ids = os.getenv("ALLOWED_USER_IDS") or os.getenv("ALLOWED_USER_ID", "")
 ALLOWED_USER_IDS: list[int] = [int(x.strip()) for x in _raw_ids.split(",") if x.strip().isdigit()]
 
-# OpenRouter
+# OpenRouter — поддержка MODEL и OPENROUTER_MODEL
 OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-120b")
-OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+OPENROUTER_MODEL: str = os.getenv("OPENROUTER_MODEL") or os.getenv("MODEL", "openai/gpt-4o-mini")
+OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 
 # Groq
 GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+
+# Файловый workspace (ограничение для file_tool)
+WORKSPACE_DIR: str = os.getenv("WORKSPACE_DIR", "./workspace")
+
+# Параметры агента
+HISTORY_LIMIT: int = int(os.getenv("HISTORY_LIMIT", "20"))
+VECTOR_SEARCH_LIMIT: int = int(os.getenv("VECTOR_SEARCH_LIMIT", "5"))
 
 # Корень проекта дашборда (для code assistant)
 PROJECT_ROOT: str = os.getenv("PROJECT_ROOT", "")

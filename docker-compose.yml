@@ -1,0 +1,15 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: the_mind_den_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/data/the_mind_den.db
+    volumes:
+      - ./data:/data
+    ports:
+      - "8001:8000"
