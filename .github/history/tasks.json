@@ -204,7 +204,7 @@
         "3. Добавить новое, убедиться, что оно появилось в БД"
       ],
       "dependencies": ["TASK-009", "TASK-010"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-012",
@@ -221,7 +221,7 @@
         "3. Убедиться в отсутствии ошибок"
       ],
       "dependencies": ["TASK-001"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-013",

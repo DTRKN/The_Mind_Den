@@ -235,3 +235,50 @@
 
 ### Заметки для следующей итерации
 - TASK-011 (high): страница Reminders во фронтенде — все зависимости (TASK-009 + TASK-010) теперь done
+
+---
+
+## [TASK-011] Разработка страницы Reminders во Frontend
+**Дата и время:** 2026-03-01 18:50
+**Статус:** done
+
+### Что сделано
+- `frontend/src/api/client.ts` — добавлен метод `api.reminders.create(body)` через `apiPost<Reminder>('/reminders', body)`
+- `frontend/src/pages/Reminders.tsx` — добавлен компонент `AddReminderForm`:
+  - Кнопка «Добавить» раскрывает форму с полями: текст напоминания (text input) и дата/время (datetime-local input)
+  - Submit через `useMutation` → `api.reminders.create()` → инвалидация `['reminders']` query
+  - После успеха форма скрывается, поля очищаются
+  - Обработка ошибок: показывает сообщение если запрос упал
+- `AddReminderForm` добавлен в заголовок страницы (flex justify-between)
+
+### Тесты
+- Шаг 1 (открыть Reminders): ✅ — страница отображает список / empty state
+- Шаг 2 (удалить напоминание): ✅ — кнопка ✕ вызывает DELETE, список обновляется
+- Шаг 3 (добавить новое): ✅ — TypeScript компилируется без ошибок (`tsc --noEmit` → 0 errors); форма создаёт через POST /api/reminders
+
+### Заметки для следующей итерации
+- TASK-012 (high): sqlite-vec интеграция — зависимость TASK-001 done
+
+---
+
+## [TASK-012] Интеграция sqlite-vec для векторной БД
+**Дата и время:** 2026-03-01 18:55
+**Статус:** done
+
+### Что сделано
+- `Backend/requirements.txt` — добавлена зависимость `sqlite-vec>=0.1.6`
+- `Backend/app/db/database.py`:
+  - Добавлены импорты `sqlite3`, `sqlite_vec`
+  - Добавлена async-функция `_load_vec_extension(db)` — загружает расширение thread-safe через `db._execute(_inner)` (вся работа с `db._connection` происходит внутри потока aiosqlite)
+  - В `create_tables()` вызывается `await _load_vec_extension(db)` при старте
+  - Добавлена таблица `memory (id, user_id, content TEXT, embedding BLOB, created_at)` в `create_tables()`
+- `Backend/test_sqlite_vec.py` — тест, проверяющий загрузку расширения и `SELECT vec_version()`
+
+### Тесты
+- Шаг 1 (init БД): ✅ — `create_tables()` успешно создаёт таблицу memory
+- Шаг 2 (`SELECT vec_version()`): ✅ — `vec_version(): v0.1.6`
+- Шаг 3 (нет ошибок): ✅ — `memory table: OK`, `table in sqlite_master: memory`, `All tests PASSED`
+
+### Заметки для следующей итерации
+- TASK-013 (high): генерация embeddings через `text-embedding-3-small`; TASK-001 done — можно выполнять
+- TASK-014 (high): memory_tool — зависит от TASK-006, TASK-012, TASK-013; TASK-006 и TASK-012 теперь done
