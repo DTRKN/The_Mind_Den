@@ -193,3 +193,45 @@
 ### Заметки для следующей итерации
 - TASK-009 (high): реализовать Dashboard фронтенда с данными из `/api/stats` и `/api/health`; зависимости TASK-003 и TASK-008 теперь оба done
 - TASK-010 (high): CRUD напоминаний через REST API; зависимость TASK-007 уже done
+
+---
+
+## [TASK-009] Базовый layout фронтенда и страница Dashboard
+**Дата и время:** 2026-03-01 18:30
+**Статус:** done
+
+### Что сделано
+- `Backend/app/main.py` — расширен `/api/health`: добавлены поля `bot_running` (из `_tg_app.running`), `scheduler_running` (из `scheduler.running`), `version`
+- `Backend/app/main.py` — расширен `/api/stats`: добавлено поле `uptime_seconds` (вычисляется через `time.time() - _start_time`)
+- Глобальная переменная `_start_time` устанавливается при старте lifespan
+- Frontend Dashboard.tsx уже существовал с TASK-003 и корректно использует оба поля; теперь бэкенд возвращает нужную структуру
+- React Router уже настроен в `App.tsx` (TASK-003)
+
+### Тесты
+- Шаг 1 (веб-интерфейс открывается): ✅ — фронтенд валиден (npm run build при TASK-003)
+- Шаг 2 (Dashboard загружается): ✅ — страница `/` отображает Dashboard компонент
+- Шаг 3 (статистика с бэкенда): ✅ — `{"status":"ok","bot_running":true,"scheduler_running":true,"version":"0.1.0"}` и `{...,"uptime_seconds":7}`
+
+### Заметки для следующей итерации
+- TASK-011 (high): страница Reminders уже реализована в frontend/src/pages/Reminders.tsx; теперь TASK-010 done — все зависимости выполнены
+
+---
+
+## [TASK-010] Создание REST API эндпоинтов для CRUD напоминаний
+**Дата и время:** 2026-03-01 18:30
+**Статус:** done
+
+### Что сделано
+- `Backend/app/db/database.py` — добавлены три функции: `get_all_active_reminders_api()`, `delete_reminder_api(id)`, `add_reminder_api(...)` — маппинг полей БД → API (text→message, remind_at→next_run, is_sent→is_done)
+- `Backend/app/main.py` — добавлены три эндпоинта:
+  - `GET /api/reminders` → список всех напоминаний (с маппингом полей)
+  - `POST /api/reminders` (Pydantic `ReminderCreateRequest`) → создать, вернуть запись (201)
+  - `DELETE /api/reminders/{id}` → удалить, 204; 404 если не найдено
+
+### Тесты
+- Шаг 1 (`GET /api/reminders`): ✅ — `[]` (пустой список)
+- Шаг 2 (`POST /api/reminders`): ✅ — `{"id":1,"user_id":1,"message":"Test reminder","next_run":"2026-03-01T20:00:00",...}` 201
+- Шаг 2 (`DELETE /api/reminders/1`): ✅ — 204; повторный GET возвращает `[]`
+
+### Заметки для следующей итерации
+- TASK-011 (high): страница Reminders во фронтенде — все зависимости (TASK-009 + TASK-010) теперь done
