@@ -282,3 +282,30 @@
 ### Заметки для следующей итерации
 - TASK-013 (high): генерация embeddings через `text-embedding-3-small`; TASK-001 done — можно выполнять
 - TASK-014 (high): memory_tool — зависит от TASK-006, TASK-012, TASK-013; TASK-006 и TASK-012 теперь done
+
+---
+
+## [TASK-013] Реализация генерации Embeddings
+**Дата и время:** 2026-03-01 19:10
+**Статус:** done
+
+### Что сделано
+- `Backend/app/config.py` — добавлена переменная `OPENAI_API_KEY` (читается из .env; если не задана — используется `OPENROUTER_API_KEY`)
+- `Backend/app/agent/embeddings.py` — создан модуль с:
+  - `get_embedding(text)` — async функция, вызывает `text-embedding-3-small`, возвращает `list[float]` (float32, 1536 dims)
+  - `_get_client()` — приоритет OPENAI_API_KEY → OPENROUTER_API_KEY (OpenRouter поддерживает `/embeddings` endpoint)
+  - `embedding_to_blob(vec)` / `blob_to_embedding(data)` — конвертация для SQLite BLOB хранения
+  - `cosine_similarity(a, b)` — без numpy, чистый Python
+- `Backend/test_embeddings.py` — тест: вызов API, проверка типа, BLOB round-trip, cosine similarity
+
+### Тесты
+- Шаг 1 (`get_embedding('test')`): ✅ — вернул `list`, `len=1536`
+- Шаг 2 (массив float): ✅ — `first 5 values: [-0.00987..., 0.00153..., ...]` — все float
+- BLOB round-trip: ✅ — 6144 bytes (1536 × 4 bytes float32)
+- cosine_similarity(v, v): ✅ — `1.000000`
+
+### Заметки для следующей итерации
+- TASK-014 (high): memory_tool — все зависимости (TASK-006, TASK-012, TASK-013) теперь done
+- TASK-016 (high): file_tool — зависит от TASK-006 (done)
+- TASK-017 (high): skills loader — зависит от TASK-006 (done)
+- TASK-021 (high): voice transcription — зависит от TASK-006 (done)

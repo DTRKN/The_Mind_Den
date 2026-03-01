@@ -237,7 +237,7 @@
         "2. Убедиться, что возвращается массив float"
       ],
       "dependencies": ["TASK-001"],
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "TASK-014",
