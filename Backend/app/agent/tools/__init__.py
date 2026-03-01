@@ -82,4 +82,34 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "file_tool",
+            "description": (
+                "Работа с файлами в изолированной рабочей директории (workspace). "
+                "Читает, создаёт/перезаписывает файлы и выводит список содержимого папки. "
+                "Операции за пределами workspace запрещены."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["read", "write", "list"],
+                        "description": "read — прочитать файл, write — записать файл, list — список содержимого папки",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Относительный путь внутри workspace, например 'notes.txt' или 'docs/'",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Содержимое файла (только для action=write)",
+                    },
+                },
+                "required": ["action"],
+            },
+        },
+    },
 ]

@@ -153,6 +153,7 @@ class AgentRunner:
         handlers = {
             "reminder_tool": self._handle_reminder,
             "memory_tool": self._handle_memory,
+            "file_tool": self._handle_file,
         }
 
         handler = handlers.get(tool_name)
@@ -185,3 +186,12 @@ class AgentRunner:
         except Exception as e:
             return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
         return await run_memory_tool(data, user_id)
+
+    async def _handle_file(self, user_id: int, args: dict) -> dict:
+        """file_tool: read/write/list файлов в изолированном workspace."""
+        from agent.tools.file_tool import FileToolInput, run_file_tool
+        try:
+            data = FileToolInput(**args)
+        except Exception as e:
+            return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
+        return await run_file_tool(data)
