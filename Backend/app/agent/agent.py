@@ -154,6 +154,7 @@ class AgentRunner:
             "reminder_tool": self._handle_reminder,
             "memory_tool": self._handle_memory,
             "file_tool": self._handle_file,
+            "skill_tool": self._handle_skill,
         }
 
         handler = handlers.get(tool_name)
@@ -195,3 +196,12 @@ class AgentRunner:
         except Exception as e:
             return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
         return await run_file_tool(data)
+
+    async def _handle_skill(self, user_id: int, args: dict) -> dict:
+        """skill_tool: создаёт новый SKILL.md в директории скиллов."""
+        from agent.tools.skill_tool import SkillToolInput, run_skill_tool
+        try:
+            data = SkillToolInput(**args)
+        except Exception as e:
+            return {"success": False, "error": f"Ошибка валидации аргументов: {e}"}
+        return await run_skill_tool(data)

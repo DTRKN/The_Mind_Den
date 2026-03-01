@@ -112,4 +112,36 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "skill_tool",
+            "description": (
+                "Создаёт новый скилл: генерирует папку и SKILL.md в директории скиллов. "
+                "Используй, когда пользователь просит обучить боту новому навыку или создать инструкцию."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Slug-имя скилла (латиница, цифры, подчёркивания), например 'translate_japanese'",
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Заголовок скилла на человеческом языке, например 'Перевод на японский'",
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Одна строка: краткое описание что делает скилл",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Подробные инструкции, правила, промпт — основное тело SKILL.md",
+                    },
+                },
+                "required": ["name", "title", "description"],
+            },
+        },
+    },
 ]
