@@ -77,7 +77,7 @@ cd backend && python -m py_compile app/main.py
 
 ```
 ## [TASK-XXX] Название задачи
-**Дата:** YYYY-MM-DD  
+**Дата и время:** YYYY-MM-DD HH:MM
 **Статус:** done
 
 ### Что сделано
