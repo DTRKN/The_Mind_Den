@@ -11,3 +11,9 @@ uvicorn[standard]>=0.30.0
 pydantic>=2.0.0
 sqlite-vec>=0.1.6
 pinecone>=5.0.0
+psutil>=5.9.0
+
+# Dev / тесты
+pytest>=8.0.0
+pytest-asyncio>=1.0.0
+httpx>=0.27.0

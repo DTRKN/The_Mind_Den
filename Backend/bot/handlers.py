@@ -33,7 +33,7 @@ from telegram.ext import (
 from datetime import datetime
 
 from config import ALLOWED_USER_IDS
-from bot.ai_handler import chat, get_model, set_model, POPULAR_MODELS
+from bot.ai_handler import chat, get_model, set_model
 from bot.code_handler import code_chat
 from bot.reminder_handler import handle_reminder_text, cmd_reminders, cmd_cancel
 from bot.voice_handler import transcribe_voice

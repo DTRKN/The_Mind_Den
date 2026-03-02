@@ -1,16 +1,55 @@
 """
-main.py
-───────
-Точка входа: инициализация БД → запуск планировщика → запуск бота.
-Запуск: python main.py (из папки Backend/)
+ВНИМАНИЕ: этот файл устарел и НЕ должен использоваться.
+
+Единственная правильная точка входа:
+
+    cd Backend
+    uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+Или в режиме разработки:
+
+    cd Backend
+    python app/main.py
 """
 
-import sys
-import os
-import logging
+raise SystemExit(
+    "\n"
+    "  ╔══════════════════════════════════════════════════════════╗\n"
+    "  ║  УСТАРЕВШИЙ ФАЙЛ — используйте app/main.py              ║\n"
+    "  ║                                                          ║\n"
+    "  ║  Правильный запуск (из папки Backend/):                 ║\n"
+    "  ║    uvicorn app.main:app --host 0.0.0.0 --port 8000      ║\n"
+    "  ╚══════════════════════════════════════════════════════════╝\n"
+)
 
-# Добавляем Backend/ в Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# ─── PID-lock: защита от двойного запуска ─────────────────────────────────────
+_LOCK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "bot.pid")
+_LOCK_FILE = os.path.normpath(_LOCK_FILE)
+
+def _acquire_lock() -> None:
+    """Проверяет, не запущен ли уже другой экземпляр бота. Если да — завершает процесс."""
+    os.makedirs(os.path.dirname(_LOCK_FILE), exist_ok=True)
+    if os.path.exists(_LOCK_FILE):
+        try:
+            with open(_LOCK_FILE) as f:
+                old_pid = int(f.read().strip())
+            import psutil
+            if psutil.pid_exists(old_pid):
+                print(f"[LOCK] Бот уже запущен (PID {old_pid}). Завершение.", flush=True)
+                sys.exit(1)
+        except (ValueError, ImportError, OSError):
+            pass  # Файл повреждён или psutil недоступен — продолжаем
+    with open(_LOCK_FILE, "w") as f:
+        f.write(str(os.getpid()))
+    atexit.register(_release_lock)
+
+def _release_lock() -> None:
+    try:
+        os.remove(_LOCK_FILE)
+    except OSError:
+        pass
+
+_acquire_lock()
 
 from telegram.ext import ApplicationBuilder, Application
 
